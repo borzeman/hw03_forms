@@ -8,7 +8,7 @@ NUM_ART = 10  # Количество выводимых статей
 
 
 def index(request):
-    post_list = Post.objects.all()
+    post_list = Post.objects.order_by('-pub_date')
     paginator = Paginator(post_list, NUM_ART)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -21,7 +21,7 @@ def index(request):
 
 def group_post(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    post_list = Post.objects.filter(group=group).all()
+    post_list = Post.objects.filter(group=group).order_by('-pub_date')
     paginator = Paginator(post_list, NUM_ART)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -34,7 +34,7 @@ def group_post(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    post_list = author.posts.select_related('author').all()
+    post_list = author.posts.select_related('author').order_by('-pub_date')
     post_count = post_list.count()
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
@@ -72,12 +72,14 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     is_edit = True
-    post = get_object_or_404(Post, id=post_id, author=request.user)
-    form = PostForm(request.POST or None, isinstance=post)
+    post = get_object_or_404(Post, id=post_id)
+    if post.author != request.user:
+        return redirect('posts:post_detail', post_id)
+    form = PostForm(request.POST or None, instance=post)
     if form.is_valid():
         post = form.save(commit=False)
         post.save()
-        return redirect('posts:post_detail', pk=post_id)
+        return redirect('posts:post_detail', post_id=post_id)
     context = {
         'form': form,
         'is_edit': is_edit,
