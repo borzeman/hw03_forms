@@ -7,13 +7,17 @@ from .forms import PostForm
 NUM_ART = 10  # Количество выводимых статей
 
 
-def index(request):
-    post_list = Post.objects.order_by('-pub_date')
+def optimization(post_list, request):  # DRY
     paginator = Paginator(post_list, NUM_ART)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    return page_obj
+
+
+def index(request):
+    post_list = Post.objects.all()
+    page_obj = optimization(post_list, request)
     context = {
-        'posts': post_list,
         'page_obj': page_obj,
     }
     return render(request, 'posts/index.html', context)
@@ -21,10 +25,8 @@ def index(request):
 
 def group_post(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    post_list = Post.objects.filter(group=group).order_by('-pub_date')
-    paginator = Paginator(post_list, NUM_ART)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    post_list = group.posts.all()
+    page_obj = optimization(post_list, request)
     context = {
         'group': group,
         'page_obj': page_obj,
@@ -34,16 +36,12 @@ def group_post(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    post_list = author.posts.select_related('author').order_by('-pub_date')
+    post_list = author.posts.select_related('author').all()
     post_count = post_list.count()
-    paginator = Paginator(post_list, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = optimization(post_list, request)
     context = {
         'author': author,
-        'post_list': post_list,
         'post_count': post_count,
-        'page_number': page_number,
         'page_obj': page_obj,
     }
     return render(request, 'posts/profile.html', context)
@@ -77,8 +75,7 @@ def post_edit(request, post_id):
         return redirect('posts:post_detail', post_id)
     form = PostForm(request.POST or None, instance=post)
     if form.is_valid():
-        post = form.save(commit=False)
-        post.save()
+        form.save(commit=False)
         return redirect('posts:post_detail', post_id=post_id)
     context = {
         'form': form,
