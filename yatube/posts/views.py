@@ -1,17 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from .models import Post, Group, User
 from .forms import PostForm
-
-NUM_ART = 10  # Количество выводимых статей
-
-
-def optimization(post_list, request):  # DRY
-    paginator = Paginator(post_list, NUM_ART)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return page_obj
+from .utils import optimization
 
 
 def index(request):
@@ -75,7 +66,7 @@ def post_edit(request, post_id):
         return redirect('posts:post_detail', post_id)
     form = PostForm(request.POST or None, instance=post)
     if form.is_valid():
-        form.save(commit=False)
+        form.save()
         return redirect('posts:post_detail', post_id=post_id)
     context = {
         'form': form,
