@@ -5,12 +5,12 @@ from .forms import PostForm
 from .utils import get_page_paginator
 
 
-NUM_ART = 10  # Количество выводимых статей
+num_art = 10  # Количество выводимых статей
 
 
 def index(request):
     post_list = Post.objects.all()
-    page_obj = get_page_paginator(post_list, request, NUM_ART)
+    page_obj = get_page_paginator(post_list, request, num_art)
     context = {
         'page_obj': page_obj,
     }
@@ -20,7 +20,7 @@ def index(request):
 def group_post(request, slug):
     group = get_object_or_404(Group, slug=slug)
     post_list = group.posts.all()
-    page_obj = get_page_paginator(post_list, request, NUM_ART)
+    page_obj = get_page_paginator(post_list, request, num_art)
     context = {
         'group': group,
         'page_obj': page_obj,
@@ -32,7 +32,7 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     post_list = author.posts.select_related('author').all()
     post_count = post_list.count()
-    page_obj = get_page_paginator(post_list, request, NUM_ART)
+    page_obj = get_page_paginator(post_list, request, num_art)
     context = {
         'author': author,
         'post_count': post_count,
